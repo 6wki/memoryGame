@@ -11,16 +11,19 @@ const cardImages = [
 ];
 
 function App() {
-  const [card, setCards] = useState([]);
+  const [cards, setCards] = useState([]);
   const [turns, setTurns] = useState(0);
   const [choiceOne, setChoiceOne] = useState(null);
   const [choiceTwo, setChoiceTwo] = useState(null);
+  const [disabled, setDisabled] = useState(false);
   const shuffleCard = () => {
     const shuffleCards = [...cardImages, ...cardImages]
       .sort(() => {
         return Math.random() - 0.5;
       })
       .map((card) => ({ ...card, id: Math.random() }));
+    setChoiceOne(null);
+    setChoiceTwo(null);
     setCards(shuffleCards);
     setTurns(0);
   };
@@ -30,18 +33,20 @@ function App() {
 
   useEffect(() => {
     if (choiceOne && choiceTwo) {
+      setDisabled(true);
       if (choiceOne.src === choiceTwo.src) {
-        console.log("match!");
-        const cards = card.map((card) => {
-          if (card === choiceOne.src) {
-            return { ...card, matching: true };
-          }
+        setCards((prevCards) => {
+          return prevCards.map((card) => {
+            if (card.src === choiceOne.src) {
+              return { ...card, matching: true };
+            } else {
+              return card;
+            }
+          });
         });
-        console.log(cards);
         resetF();
       } else {
-        console.log("Not Matched");
-        resetF();
+        setTimeout(() => resetF(), 500);
       }
     }
   }, [choiceOne, choiceTwo]);
@@ -50,16 +55,29 @@ function App() {
     setChoiceOne(null);
     setChoiceTwo(null);
     setTurns((prevTurns) => prevTurns + 1);
+    setDisabled(false);
   };
+
+  useEffect(() => {
+    shuffleCard();
+  }, []);
+
   return (
     <div className="App">
       <h1>Magic Match</h1>
       <button onClick={shuffleCard}>New Game</button>
       <div className="card-grid">
-        {card.map((card) => (
-          <SingleCard handleChoice={handleChoice} key={card.id} card={card} />
+        {cards.map((card) => (
+          <SingleCard
+            handleChoice={handleChoice}
+            key={card.id}
+            card={card}
+            flipped={card === choiceOne || card === choiceTwo || card.matching}
+            disabled={disabled}
+          />
         ))}
       </div>
+      <p>Turns: {turns}</p>
     </div>
   );
 }
